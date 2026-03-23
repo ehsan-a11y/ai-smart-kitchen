@@ -12,7 +12,37 @@ const CUISINE_EMOJIS = {
   Thai: '🍜', Greek: '🫕', default: '🍽️'
 }
 
-export default function RecipeSuggestions({ recipes, loading, onSelect, ingredients }) {
+export default function RecipeSuggestions({ recipes, loading, error, onSelect, onRetry, ingredients }) {
+  // ── Error state ────────────────────────────────────────────────────
+  if (error) {
+    const isCredits = error.toLowerCase().includes('credit') || error.toLowerCase().includes('balance')
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4">
+        <div className="text-5xl">😔</div>
+        <div>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Chef Claude couldn't respond</h3>
+          <p className="text-slate-400 text-sm max-w-sm leading-relaxed">{error}</p>
+        </div>
+        {isCredits && (
+          <a
+            href="https://console.anthropic.com/settings/billing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm font-medium hover:bg-amber-500/20 transition-colors"
+          >
+            💳 Add Credits at console.anthropic.com →
+          </a>
+        )}
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-slate-300 text-sm hover:bg-slate-600 transition-colors"
+        >
+          🔄 Try Again
+        </button>
+      </div>
+    )
+  }
+
   if (!loading && recipes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">

@@ -20,7 +20,7 @@ Provide 6-10 detailed steps covering all preparation and cooking."""
 
 def call_claude(api_key, system_prompt, user_message, max_tokens=4096):
     payload = json.dumps({
-        "model": "claude-opus-4-6",
+        "model": "claude-haiku-4-5",
         "max_tokens": max_tokens,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_message}]

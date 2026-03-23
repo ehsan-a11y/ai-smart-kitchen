@@ -14,12 +14,38 @@ const ANIMATION_ICONS = {
   idle: '👨‍🍳'
 }
 
-export default function CookingGuide({ overview, steps, currentStep, loading, onStepSelect, onBack }) {
+export default function CookingGuide({ overview, steps, currentStep, loading, error, onStepSelect, onBack }) {
   const totalSteps = steps.length
   const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0
   const step = steps[currentStep]
   const canPrev = currentStep > 0
   const canNext = currentStep < totalSteps - 1
+
+  if (error) {
+    const isCredits = error.toLowerCase().includes('credit') || error.toLowerCase().includes('balance')
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-8 gap-4">
+        <div className="text-5xl">😔</div>
+        <div>
+          <h3 className="text-lg font-semibold text-red-400 mb-2">Couldn't load cooking guide</h3>
+          <p className="text-slate-400 text-sm max-w-sm leading-relaxed">{error}</p>
+        </div>
+        {isCredits && (
+          <a
+            href="https://console.anthropic.com/settings/billing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm font-medium hover:bg-amber-500/20 transition-colors"
+          >
+            💳 Add Credits at console.anthropic.com →
+          </a>
+        )}
+        <button onClick={onBack} className="px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-slate-300 text-sm hover:bg-slate-600 transition-colors">
+          ← Back to Recipes
+        </button>
+      </div>
+    )
+  }
 
   if (loading && !overview) {
     return (
