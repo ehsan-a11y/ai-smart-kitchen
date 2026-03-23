@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.12",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    { "source": "/api/suggest-recipes", "destination": "/api/suggest_recipes" },
+    { "source": "/api/cooking-guide", "destination": "/api/cooking_guide" },
+    { "source": "/((?!api/).*)", "destination": "/" }
+  ]
+}
