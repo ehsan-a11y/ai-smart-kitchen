@@ -1,1 +1,1 @@
-# No external dependencies needed — API calls use Python's built-in urllib
+certifi==2025.1.31
