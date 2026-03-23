@@ -58,7 +58,7 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length))
             ingredients = body.get("ingredients", [])
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
             text = call_claude(
                 api_key,

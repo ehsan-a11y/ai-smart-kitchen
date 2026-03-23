@@ -65,7 +65,7 @@ class handler(BaseHTTPRequestHandler):
             recipe_name = body.get("recipe_name", "")
             ingredients = body.get("ingredients", [])
             servings = body.get("servings", 2)
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
             text = call_claude(
                 api_key,
