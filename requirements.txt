@@ -1,1 +1,1 @@
-anthropic==0.40.0
+# No external dependencies needed — API calls use Python's built-in urllib

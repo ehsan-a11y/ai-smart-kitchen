@@ -1,7 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
-import anthropic
+import urllib.request
+import urllib.error
 
 COOKING_GUIDE_SYSTEM_PROMPT = """You are Chef Claude, an expert AI chef. Provide a complete step-by-step cooking guide.
 
@@ -17,19 +18,45 @@ Output ONLY JSON lines, no other text, no markdown, no code blocks.
 Provide 6-10 detailed steps covering all preparation and cooking."""
 
 
+def call_claude(api_key, system_prompt, user_message, max_tokens=4096):
+    payload = json.dumps({
+        "model": "claude-opus-4-6",
+        "max_tokens": max_tokens,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_message}]
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=payload,
+        method="POST",
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+    )
+    with urllib.request.urlopen(req, timeout=55) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+        return body["content"][0]["text"]
+
+
 class handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-    def _cors_headers(self):
+    def _send_json(self, status, data):
+        payload = json.dumps(data).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+        self.wfile.write(payload)
 
     def do_OPTIONS(self):
-        self.send_response(200)
-        self._cors_headers()
-        self.end_headers()
+        self._send_json(200, {})
 
     def do_POST(self):
         try:
@@ -38,28 +65,17 @@ class handler(BaseHTTPRequestHandler):
             recipe_name = body.get("recipe_name", "")
             ingredients = body.get("ingredients", [])
             servings = body.get("servings", 2)
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
-            client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-            message = client.messages.create(
-                model="claude-opus-4-6",
-                max_tokens=4096,
-                system=COOKING_GUIDE_SYSTEM_PROMPT,
-                messages=[{
-                    "role": "user",
-                    "content": f"Recipe: {recipe_name}\nIngredients available: {', '.join(ingredients)}\nServings: {servings}\n\nProvide complete step-by-step cooking instructions."
-                }]
+            text = call_claude(
+                api_key,
+                COOKING_GUIDE_SYSTEM_PROMPT,
+                f"Recipe: {recipe_name}\nIngredients available: {', '.join(ingredients)}\nServings: {servings}\n\nProvide complete step-by-step cooking instructions."
             )
+            self._send_json(200, {"text": text})
 
-            result = {"text": message.content[0].text}
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self._cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps(result).encode())
-
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8") if e.fp else str(e)
+            self._send_json(502, {"error": f"Anthropic API error {e.code}: {err_body}"})
         except Exception as e:
-            self.send_response(500)
-            self.send_header("Content-Type", "application/json")
-            self._cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode())
+            self._send_json(500, {"error": str(e)})
